@@ -46,15 +46,13 @@
 #include "dns_parser.h"
 #include "dns_types.h"
 
-#define	DOMAINLENGTH 115 // TODO: Check if 20 is ok.
+/* Initialise the module */
+short eemo_blacklist_stats_init(char *, char*);
 
-/* Initialise the DNS query counter module */
-void eemo_blacklist_stats_init(char** ips, int ip_count, char *, int emit_interval, char* stats_file, int append_file, int reset);
-
-/* Uninitialise the DNS query counter module */
+/* Uninitialise the module */
 void eemo_blacklist_stats_uninit(eemo_conf_free_string_array_fn free_strings);
 
-/* Handle DNS query packets and log the statistics */
+/* Handle DNS query packets and check for blacklisted domains */
 eemo_rv eemo_blacklist_stats_handleqr(eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet);
 
 /* Reset statistics */

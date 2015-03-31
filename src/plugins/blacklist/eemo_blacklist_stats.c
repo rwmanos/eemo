@@ -48,161 +48,107 @@
  * it is used to store blacklisted domains */
 struct domainhash
 {
-	char domainname[DOMAINLENGTH]; 
+	const char *domainname; 
 	UT_hash_handle hh;         /* makes this structure hashable */
 };
 
 /* Configuration */
-char** 	stat_ips 		= NULL;
-int 	stat_ipcount 		= 0;
-char*	log_file		= NULL;
-int	stat_append		= 0;
-int	stat_reset		= 1;
-struct 	domainhash *domainhashtable = NULL;    /* important! initialize the HASH TABLE */
-int 	testcount 		= 0;
-/* Statistics file */
-FILE*	stat_fp			= NULL;
+char*	logging_file_name		= NULL;
+FILE*	logging_file			= NULL;
+struct 	domainhash *domainhashtable 	= NULL;    /* important! initialize the HASH TABLE */
+int 	testcount 			= 0;
 
-/* Signal handler for alarms & user signals */
-void signal_handler(int signum)
+
+/* Initialise the module */
+short eemo_blacklist_stats_init(char* blacklist_file_name, char* temp_logging_file_name)
 {
-	if (signum == SIGUSR1)
-	{
-		DEBUG_MSG("Received user signal");
-	}
-	else if (signum == SIGALRM)
-	{
-		DEBUG_MSG("Received automated alarm");
-	}
-	
-	/* Set the new alarm if necessary */
-	if (signum == SIGALRM)
-	{
-		//alarm(stat_emit_interval);
-	}
-}
-
-/* Initialise the DNS query counter module */
-void eemo_blacklist_stats_init(char** ips, int ipcount, char* blacklist_file, int emit_interval, char* stats_file, int append_file, int reset)
-{
-	int i = 0;
-
 	// Variables used to read and load blacklist file
-	FILE * loadblacklist;
+	FILE * blacklist_file = NULL;
 	char * line = NULL;
 	size_t len = 0;
 	ssize_t read;
 
-	stat_ips = ips;
-	stat_ipcount = ipcount;
-	//stat_blacklist = blacklist;
-	//stat_blacklistcount = blacklistcount;
+	logging_file_name = temp_logging_file_name;
 
-	INFO_MSG("Listening to %d IP addresses", stat_ipcount);
-
-	for (i = 0; i < stat_ipcount; i++)
+	// Open the log file.
+	logging_file = fopen(logging_file_name, "w");
+	if (logging_file == NULL)
 	{
-		INFO_MSG("Listening for queries to IP %s", ips[i]);
+		ERROR_MSG("Failed to open %s for writing", logging_file_name);
+		return 0;
 	}
-
-	//stat_emit_interval = emit_interval;
-	//INFO_MSG("Signal every %d seconds", emit_interval);
-
-	log_file = stats_file;
-
-	INFO_MSG("Writing infections to the file called %s", log_file);
-
-	stat_append = append_file;
-
-	//INFO_MSG("Will %soverwrite the file when new statistics are available", stat_append ? "not " : "");
-
-	stat_reset = reset;
-
-	//INFO_MSG("Will %sreset statistics once they have been written to file", stat_reset ? "" : "not ");
-
-	stat_fp = fopen(log_file, "w");
-
-	if (stat_fp != NULL)
-	{
-		INFO_MSG("Opened file: %s ", log_file);
-	}
-	else
-	{
-		ERROR_MSG("Failed to open %s for writing", log_file);
-	}
+	INFO_MSG("Writing infected nodes to: %s", logging_file_name);
 	
-	// Open the file that contains the malicious domains
-	loadblacklist = fopen(blacklist_file, "r");
-
+	// Total number of loaded domains.
 	int sum_loaded_domains = 0;
-	if (loadblacklist != NULL)
+
+	// Open the file that contains the malicious domains.
+	blacklist_file = fopen(blacklist_file_name, "r");
+	if (blacklist_file == NULL)
 	{
-		while ((read = getline(&line, &len, loadblacklist)) != -1) {
-			sum_loaded_domains++;
-			//printf("Retrieved line of length %zu :\n", read);
-			//printf("%s", line);
-
-			// Remove the newline character at the end of each line.
-			line[strcspn(line, "\r\n")] = 0;
-
-			// Check if the value is already inserted in the hash table. 
-			struct domainhash *s;
-			HASH_FIND_STR( domainhashtable, line, s);
-			if (s != NULL)	
-				ERROR_MSG("collision between %s AND %s", line, s->domainname);
-			
-			// Add the domain to the hash table.
-			struct domainhash *d;
-			d = (struct domainhash*) malloc(sizeof(struct domainhash));
-			strncpy(d->domainname, line, DOMAINLENGTH-1);
-			d->domainname[DOMAINLENGTH-1] = '\0'; // just in case that len > DOMAINLENGTH
-			HASH_ADD_STR( domainhashtable, domainname, d);  /* domainname: name of key field */
-		}
-		INFO_MSG("%d blacklisted domains were loaded", sum_loaded_domains);
+		ERROR_MSG("Failed to open %s for reading", blacklist_file_name);
+		return 0;
 	}
-	else
-	{
-		ERROR_MSG("Failed to open %s for reading", blacklist_file);
+		
+	// Read the file and insert the malicious domains to the hash table.
+	while ((read = getline(&line, &len, blacklist_file)) != -1) {
+
+		// Remove the newline character at the end of each line.
+		line[strcspn(line, "\r\n")] = 0;
+			
+		// Allocate memory for each domain name.
+		char *tempdomain;
+		tempdomain = (char *) malloc(sizeof(char)*len);			
+		strncpy(tempdomain, line, len);
+
+		// Check if the value is already inserted in the hash table. 
+		struct domainhash *s;
+		HASH_FIND_STR( domainhashtable, tempdomain, s);
+		if (s != NULL){	
+			ERROR_MSG("collision between %s AND %s", line, s->domainname);
+			ERROR_MSG("Verify that '%s' does not contain dublicate entries");
+			return 0;
+		}
+			
+		// Insert the domain name to the hash table.
+		struct domainhash *d;
+		d = (struct domainhash*) malloc(sizeof(struct domainhash));
+		d->domainname = tempdomain;
+		HASH_ADD_KEYPTR( hh, domainhashtable, d->domainname, strlen(d->domainname), d);
+
+		// 
+		sum_loaded_domains++;
 	}
 	
-	/* Register signal handler */
-	signal(SIGUSR1, signal_handler);
-	signal(SIGALRM, signal_handler);
-
-	/* Set the alarm */
-	//alarm(stat_emit_interval);
+	// Verify that the file is still open and close it.
+	if (blacklist_file == NULL){
+		ERROR_MSG("File '%s' has closed unexpectedly", blacklist_file_name);
+		return 0;
+	}
+	fclose(blacklist_file);
+	INFO_MSG("%d blacklisted domains were loaded successfully", sum_loaded_domains);
+	return 1;
 }
 
 /* Uninitialise the DNS query counter module */
 void eemo_blacklist_stats_uninit(eemo_conf_free_string_array_fn free_strings)
 {
-	/* Unregister signal handlers */
-	alarm(0);
-	signal(SIGUSR1, SIG_DFL);
-	signal(SIGALRM, SIG_DFL);
+	fprintf(logging_file, "Total inspected packets: %d\n", testcount);
 	
-
-	fprintf(stat_fp, "Total inspected packets: %d\n", testcount);
-	/* Close the file */
-	if (stat_fp != NULL)
+	// Verify that the file is still open and close it. 
+	if (logging_file == NULL)
 	{
-		fclose(stat_fp);
-		DEBUG_MSG("Closed %s", log_file);
+		ERROR_MSG("File '%s' has closed unexpectedly", logging_file_name);
 	}
-	else
-	{
-		INFO_MSG("File %s was not open", log_file);
-	}
+	fclose(logging_file);
 
 	// Free the memory of the hash table.
 	struct domainhash *current, *tmp;
 	HASH_ITER(hh, domainhashtable, current, tmp) {
-		HASH_DEL(domainhashtable, current);  /* delete it (users advances to next) */
-		free(current);            /* free it */
+		HASH_DEL(domainhashtable, current);  	/* delete it (users advances to next) */
+		free(current);            		/* free it */
 	}
-
-	(free_strings)(stat_ips, stat_ipcount);
-	free(log_file);
+	free(logging_file_name);
 }
 
 /* Handle DNS query packets and log the blacklisted domain*/
@@ -210,32 +156,32 @@ eemo_rv eemo_blacklist_stats_handleqr(eemo_ip_packet_info ip_info, int is_tcp, c
 {
 	eemo_dns_query* query_it = NULL;
 
+	// Check if the packet is a query.
 	if (!dns_packet->qr_flag)
 	{
-		/* This is a query */
-
-		/* Count only valid queries */
+		// Validate the packet
 		if (!dns_packet->is_valid)
 		{
 			return ERV_SKIPPED;
 		}
 		testcount++;
 
-		struct domainhash *s;
-		if (stat_fp == NULL)
-			ERROR_MSG("Failed to open %s for writing", log_file);
+		if (logging_file == NULL)
+			ERROR_MSG("File '%s' has closed unexpectedly", logging_file_name);
+			// This should return an error.
 
 		// Iterate for every requested domain in the query.
 		LL_FOREACH(dns_packet->questions, query_it)
 		{
 			// Check if the domain is in the blacklist.
-			HASH_FIND_STR( domainhashtable, query_it->qname, s );  /* s: output pointer */
+			struct domainhash *s; // s: output pointer
+			HASH_FIND_STR( domainhashtable, query_it->qname, s );  
 			if (s != NULL) 
 			{
-				fprintf(stat_fp, "query for blacklisted domain: %s , from %s\n", query_it->qname, ip_info.ip_src);
+				fprintf(logging_file, "query for blacklisted domain: %s , from %s\n", query_it->qname, ip_info.ip_src);
 				break;
 			} 
-			fflush(stat_fp);
+			//fflush(logging_file);
 		}
 	}
 	return ERV_HANDLED;

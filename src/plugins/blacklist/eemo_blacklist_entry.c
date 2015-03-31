@@ -50,57 +50,37 @@ static unsigned long stats_dns_handler_handle = 0;
 /* Plugin initialisation */
 eemo_rv eemo_blacklist_init(eemo_export_fn_table_ptr eemo_fn, const char* conf_base_path)
 {
-	char** 	ips 		= NULL;
-	int 	ipcount 	= 0;
-	int	emit_interval	= 0;
-	char*	file		= NULL;
-	int	append		= 0;
-	int	reset		= 1;
 	eemo_rv rv		= ERV_OK;
+	char*	logging_file	= NULL;
 	char* 	blacklist_file 	= NULL;
-
+	short 	status		= 1;
+	
 	/* Initialise logging for the plugin */
 	eemo_init_plugin_log(eemo_fn->log);
 
 	/* Retrieve configuration */
-	emit_interval = 5; // remove
-	append = 1; // remove
-	reset = 0; // remove
-
-	if (((eemo_fn->conf_get_string)(conf_base_path, "log_file", &file, NULL) != ERV_OK) ||
-	    (file == NULL))
+	if (((eemo_fn->conf_get_string)(conf_base_path, "log_file", &logging_file, NULL) != ERV_OK) ||
+	    (logging_file == NULL))
 	{
-		return ERV_CONFIG_ERROR;
-	}
-
-	if ((eemo_fn->conf_get_string_array)(conf_base_path, "listen_ips", &ips, &ipcount) != ERV_OK)
-	{
-		free(file);
 		return ERV_CONFIG_ERROR;
 	}
 	
 	if (((eemo_fn->conf_get_string)(conf_base_path, "blacklist_file", &blacklist_file, NULL) != ERV_OK) || (blacklist_file) == NULL)
 	{
-		free(file);
-		free(ips);
+		free(logging_file);
 		return ERV_CONFIG_ERROR;
 	}
 
-
-	/* Initialise the DNS statistics counter */
-	eemo_blacklist_stats_init(ips, ipcount, blacklist_file, emit_interval, file, append, reset);
+	/* Initialise the module */
+	status = eemo_blacklist_stats_init(blacklist_file, logging_file);
+	if ( status == 0 ) 
+		return ERV_CONFIG_ERROR;
 
 	/* Register DNS query handler */
 	rv = (eemo_fn->reg_dns_handler)(&eemo_blacklist_stats_handleqr, PARSE_QUERY | PARSE_RESPONSE, &stats_dns_handler_handle);
-
 	if (rv != ERV_OK)
-	{
 		ERROR_MSG("Failed to register DNS query handler");
-
-		return rv;
-	}
-
-	return ERV_OK;
+	return rv;
 }
 
 /* Plugin uninitialisation */
