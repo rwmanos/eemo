@@ -42,6 +42,11 @@ define([EEMO_DNSSENSORFW_CURRENT], [1])
 define([EEMO_DNSSENSORFW_REVISION], [0])
 define([EEMO_DNSSENSORFW_AGE], [0])
 
+# BLACKLIST 
+define([EEMO_BLACKLIST_CURRENT], [1])
+define([EEMO_BLACKLIST_REVISION], [0])
+define([EEMO_BLACKLIST_AGE], [0])
+
 ################################################################################
 # Configuration functions                                                      #
 ################################################################################
@@ -66,6 +71,8 @@ EEMO_ICMPFRAGMON_VERSION_INFO="EEMO_ICMPFRAGMON_CURRENT:EEMO_ICMPFRAGMON_REVISIO
 AC_SUBST(EEMO_ICMPFRAGMON_VERSION_INFO)
 EEMO_DNSSENSORFW_VERSION_INFO="EEMO_DNSSENSORFW_CURRENT:EEMO_DNSSENSORFW_REVISION:EEMO_DNSSENSORFW_AGE"
 AC_SUBST(EEMO_DNSSENSORFW_VERSION_INFO)
+EEMO_BLACKLIST_VERSION_INFO="EEMO_BLACKLIST_CURRENT:EEMO_BLACKLIST_REVISION:EEMO_BLACKLIST_AGE"
+AC_SUBST(EEMO_BLACKLIST_VERSION_INFO)
 
 # Checks for compilers and other programs
 AC_PROG_CC_C99
@@ -189,6 +196,7 @@ AC_CONFIG_FILES([
 	src/plugins/dnssensorfw/testsink/Makefile
 	src/plugins/icmpfragmon/Makefile
 	src/plugins/dnsqrlog/Makefile
+	src/plugins/blacklist/Makefile
 	config/Makefile
 ])
 

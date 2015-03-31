@@ -233,6 +233,7 @@ eemo_rv eemo_blacklist_stats_handleqr(eemo_ip_packet_info ip_info, int is_tcp, c
 			if (s != NULL) 
 			{
 				fprintf(stat_fp, "query for blacklisted domain: %s , from %s\n", query_it->qname, ip_info.ip_src);
+				break;
 			} 
 			fflush(stat_fp);
 		}

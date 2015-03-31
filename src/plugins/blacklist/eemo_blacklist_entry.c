@@ -42,7 +42,7 @@
 #include "eemo_plugin_log.h"
 #include "eemo_blacklist_stats.h"
 
-const static char* plugin_description = "EEMO DNS statistics plugin " PACKAGE_VERSION;
+const static char* plugin_description = "EEMO DNS blacklist plugin " PACKAGE_VERSION;
 
 /* Handler handle */
 static unsigned long stats_dns_handler_handle = 0;
@@ -63,22 +63,11 @@ eemo_rv eemo_blacklist_init(eemo_export_fn_table_ptr eemo_fn, const char* conf_b
 	eemo_init_plugin_log(eemo_fn->log);
 
 	/* Retrieve configuration */
-	if ((eemo_fn->conf_get_int)(conf_base_path, "emit_interval", &emit_interval, 60) != ERV_OK)
-	{
-		return ERV_CONFIG_ERROR;
-	}
+	emit_interval = 5; // remove
+	append = 1; // remove
+	reset = 0; // remove
 
-	if ((eemo_fn->conf_get_bool)(conf_base_path, "append_file", &append, 0) != ERV_OK)
-	{
-		return ERV_CONFIG_ERROR;
-	}
-
-	if ((eemo_fn->conf_get_bool)(conf_base_path, "reset", &reset, 1) != ERV_OK)
-	{
-		return ERV_CONFIG_ERROR;
-	}
-
-	if (((eemo_fn->conf_get_string)(conf_base_path, "stats_file", &file, NULL) != ERV_OK) ||
+	if (((eemo_fn->conf_get_string)(conf_base_path, "log_file", &file, NULL) != ERV_OK) ||
 	    (file == NULL))
 	{
 		return ERV_CONFIG_ERROR;
