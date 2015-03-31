@@ -12,8 +12,8 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of SURFnet bv nor the names of its contributors 
- *    may be used to endorse or promote products derived from this 
+ * 3. Neither the name of SURFnet bv nor the names of its contributors
+ *    may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -48,63 +48,63 @@ const static char* plugin_description = "EEMO DNS blacklist plugin " PACKAGE_VER
 static unsigned long stats_dns_handler_handle = 0;
 
 /* Plugin initialisation */
-eemo_rv eemo_blacklist_init(eemo_export_fn_table_ptr eemo_fn, const char* conf_base_path)
+eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf_base_path )
 {
 	eemo_rv rv		= ERV_OK;
 	char*	logging_file	= NULL;
 	char* 	blacklist_file 	= NULL;
 	short 	status		= 1;
-	
+
 	/* Initialise logging for the plugin */
-	eemo_init_plugin_log(eemo_fn->log);
+	eemo_init_plugin_log ( eemo_fn->log );
 
 	/* Retrieve configuration */
-	if (((eemo_fn->conf_get_string)(conf_base_path, "log_file", &logging_file, NULL) != ERV_OK) ||
-	    (logging_file == NULL))
+	if ( ( ( eemo_fn->conf_get_string ) ( conf_base_path, "log_file", &logging_file, NULL ) != ERV_OK ) ||
+	        ( logging_file == NULL ) )
 	{
 		return ERV_CONFIG_ERROR;
 	}
-	
-	if (((eemo_fn->conf_get_string)(conf_base_path, "blacklist_file", &blacklist_file, NULL) != ERV_OK) || (blacklist_file) == NULL)
+
+	if ( ( ( eemo_fn->conf_get_string ) ( conf_base_path, "blacklist_file", &blacklist_file, NULL ) != ERV_OK ) || ( blacklist_file ) == NULL )
 	{
-		free(logging_file);
+		free ( logging_file );
 		return ERV_CONFIG_ERROR;
 	}
 
 	/* Initialise the module */
-	status = eemo_blacklist_stats_init(blacklist_file, logging_file);
-	if ( status == 0 ) 
+	status = eemo_blacklist_stats_init ( blacklist_file, logging_file );
+	if ( status == 0 )
 		return ERV_CONFIG_ERROR;
 
 	/* Register DNS query handler */
-	rv = (eemo_fn->reg_dns_handler)(&eemo_blacklist_stats_handleqr, PARSE_QUERY | PARSE_RESPONSE, &stats_dns_handler_handle);
-	if (rv != ERV_OK)
-		ERROR_MSG("Failed to register DNS query handler");
+	rv = ( eemo_fn->reg_dns_handler ) ( &eemo_blacklist_stats_handleqr, PARSE_QUERY | PARSE_RESPONSE, &stats_dns_handler_handle );
+	if ( rv != ERV_OK )
+		ERROR_MSG ( "Failed to register DNS query handler" );
 	return rv;
 }
 
 /* Plugin uninitialisation */
-eemo_rv eemo_blacklist_uninit(eemo_export_fn_table_ptr eemo_fn)
+eemo_rv eemo_blacklist_uninit ( eemo_export_fn_table_ptr eemo_fn )
 {
 	/* Unregister DNS query handler */
-	if ((eemo_fn->unreg_dns_handler)(stats_dns_handler_handle) != ERV_OK)
+	if ( ( eemo_fn->unreg_dns_handler ) ( stats_dns_handler_handle ) != ERV_OK )
 	{
-		ERROR_MSG("Failed to unregister DNS query handler");
+		ERROR_MSG ( "Failed to unregister DNS query handler" );
 	}
 
-	eemo_blacklist_stats_uninit(eemo_fn->conf_free_string_array);
+	eemo_blacklist_stats_uninit ( eemo_fn->conf_free_string_array );
 
 	return ERV_OK;
 }
 
 /* Retrieve plugin description */
-const char* eemo_blacklist_getdescription(void)
+const char* eemo_blacklist_getdescription ( void )
 {
 	return plugin_description;
 }
 
 /* Retrieve plugin status */
-eemo_rv eemo_blacklist_status(void)
+eemo_rv eemo_blacklist_status ( void )
 {
 	return ERV_OK;
 }
@@ -120,9 +120,9 @@ static eemo_plugin_fn_table blacklist_fn_table =
 };
 
 /* Entry point for retrieving plugin function table */
-eemo_rv eemo_plugin_get_fn_table(eemo_plugin_fn_table_ptrptr fn_table)
+eemo_rv eemo_plugin_get_fn_table ( eemo_plugin_fn_table_ptrptr fn_table )
 {
-	if (fn_table == NULL)
+	if ( fn_table == NULL )
 	{
 		return ERV_PARAM_INVALID;
 	}

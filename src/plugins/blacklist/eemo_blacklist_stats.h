@@ -12,8 +12,8 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of SURFnet bv nor the names of its contributors 
- *    may be used to endorse or promote products derived from this 
+ * 3. Neither the name of SURFnet bv nor the names of its contributors
+ *    may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -46,17 +46,17 @@
 #include "dns_parser.h"
 #include "dns_types.h"
 
-/* Initialise the module */
-short eemo_blacklist_stats_init(char *, char*);
+/* Initialize the module */
+short eemo_blacklist_stats_init ( char *, char* );
 
-/* Uninitialise the module */
-void eemo_blacklist_stats_uninit(eemo_conf_free_string_array_fn free_strings);
+/* Uninitialize the module */
+void eemo_blacklist_stats_uninit ( eemo_conf_free_string_array_fn free_strings );
 
-/* Handle DNS query packets and check for blacklisted domains */
-eemo_rv eemo_blacklist_stats_handleqr(eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet);
+/* Handle DNS query packets and check if blacklisted domains was requested */
+eemo_rv eemo_blacklist_stats_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet );
 
 /* Reset statistics */
-void eemo_blacklist_stats_reset(void);
+void eemo_blacklist_stats_reset ( void );
 
 #endif /* !_EEMO_DNSSTATS_STATS_H */
 
