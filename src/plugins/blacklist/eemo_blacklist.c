@@ -37,7 +37,7 @@
 #include "config.h"
 #include "eemo.h"
 #include "eemo_log.h"
-#include "eemo_blacklist_stats.h"
+#include "eemo_blacklist.h"
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -60,7 +60,7 @@ int 	testcount 			= 0;
 
 
 /* Initialize the module */
-short eemo_blacklist_stats_init ( char* blacklist_file_name, char* temp_logging_file_name )
+short eemo_blacklist_initialize ( char* blacklist_file_name, char* temp_logging_file_name )
 {
 	// Variables used to read and load blacklist file
 	FILE * blacklist_file 	= NULL;
@@ -131,7 +131,7 @@ short eemo_blacklist_stats_init ( char* blacklist_file_name, char* temp_logging_
 }
 
 /* Uninitialize the DNS query counter module */
-void eemo_blacklist_stats_uninit ( eemo_conf_free_string_array_fn free_strings )
+void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings )
 {
 	fprintf ( logging_file, "Total inspected packets: %d\n", testcount );
 
@@ -152,7 +152,7 @@ void eemo_blacklist_stats_uninit ( eemo_conf_free_string_array_fn free_strings )
 }
 
 /* Handle DNS query packets and log the blacklisted domain*/
-eemo_rv eemo_blacklist_stats_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet )
+eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet )
 {
 	eemo_dns_query* query_it = NULL;
 

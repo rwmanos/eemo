@@ -40,12 +40,12 @@
 #include "eemo.h"
 #include "eemo_api.h"
 #include "eemo_plugin_log.h"
-#include "eemo_blacklist_stats.h"
+#include "eemo_blacklist.h"
 
 const static char* plugin_description = "EEMO DNS blacklist plugin " PACKAGE_VERSION;
 
 /* Handler handle */
-static unsigned long stats_dns_handler_handle = 0;
+static unsigned long dns_handler_handle = 0;
 
 /* Plugin initialisation */
 eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf_base_path )
@@ -72,12 +72,12 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 	}
 
 	/* Initialise the module */
-	status = eemo_blacklist_stats_init ( blacklist_file, logging_file );
+	status = eemo_blacklist_initialize ( blacklist_file, logging_file );
 	if ( status == 0 )
 		return ERV_CONFIG_ERROR;
 
 	/* Register DNS query handler */
-	rv = ( eemo_fn->reg_dns_handler ) ( &eemo_blacklist_stats_handleqr, PARSE_QUERY | PARSE_RESPONSE, &stats_dns_handler_handle );
+	rv = ( eemo_fn->reg_dns_handler ) ( &eemo_blacklist_handleqr, PARSE_QUERY | PARSE_RESPONSE, &dns_handler_handle );
 	if ( rv != ERV_OK )
 		ERROR_MSG ( "Failed to register DNS query handler" );
 	return rv;
@@ -87,12 +87,12 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 eemo_rv eemo_blacklist_uninit ( eemo_export_fn_table_ptr eemo_fn )
 {
 	/* Unregister DNS query handler */
-	if ( ( eemo_fn->unreg_dns_handler ) ( stats_dns_handler_handle ) != ERV_OK )
+	if ( ( eemo_fn->unreg_dns_handler ) ( dns_handler_handle ) != ERV_OK )
 	{
 		ERROR_MSG ( "Failed to unregister DNS query handler" );
 	}
 
-	eemo_blacklist_stats_uninit ( eemo_fn->conf_free_string_array );
+	eemo_blacklist_uninitialize ( eemo_fn->conf_free_string_array );
 
 	return ERV_OK;
 }
@@ -131,4 +131,3 @@ eemo_rv eemo_plugin_get_fn_table ( eemo_plugin_fn_table_ptrptr fn_table )
 
 	return ERV_OK;
 }
-
