@@ -8,8 +8,8 @@ AM_CFLAGS =			-I$(srcdir)/.. \
 lib_LTLIBRARIES = 		libeemo_blacklist.la
 
 libeemo_blacklist_la_SOURCES =	eemo_blacklist_entry.c \
-				eemo_blacklist_stats.c \
-				eemo_blacklist_stats.h \
+				eemo_blacklist.c \
+				eemo_blacklist.h \
 				../eemo_plugin_log.c \
 				../eemo_plugin_log.h
 
