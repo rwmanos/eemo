@@ -58,14 +58,13 @@ FILE*	logging_file			= NULL;
 struct 	domainhash *domainhashtable 	= NULL;    /* important! initialize the HASH TABLE */
 int 	testcount 			= 0;
 
-
 /* Initialize the module */
 short eemo_blacklist_initialize ( char* blacklist_file_name, char* temp_logging_file_name )
 {
 	// Variables used to read and load blacklist file
 	FILE * blacklist_file 	= NULL;
 	char * line 		= NULL;
-	size_t len 		= 0;
+	size_t line_length 	= 0;
 	ssize_t read;
 
 	logging_file_name = temp_logging_file_name;
@@ -74,38 +73,38 @@ short eemo_blacklist_initialize ( char* blacklist_file_name, char* temp_logging_
 	logging_file = fopen ( logging_file_name, "w" );
 	if ( logging_file == NULL )
 	{
-		ERROR_MSG ( "Failed to open %s for writing", logging_file_name );
+		ERROR_MSG ( "Failed to open '%s' for writing", logging_file_name );
 		return 0;
 	}
-	INFO_MSG ( "Writing infected nodes to: %s", logging_file_name );
-
-	// Total number of loaded domains.
-	int sum_loaded_domains = 0;
+	INFO_MSG ( "Writing infected nodes to: '%s'", logging_file_name );
 
 	// Open the file that contains the malicious domains.
 	blacklist_file = fopen ( blacklist_file_name, "r" );
 	if ( blacklist_file == NULL )
 	{
-		ERROR_MSG ( "Failed to open %s for reading", blacklist_file_name );
+		ERROR_MSG ( "Failed to open '%s' for reading", blacklist_file_name );
 		return 0;
 	}
 
+	// Total number of loaded domains.
+	int sum_loaded_domains = 0;
+
 	// Read the file and insert the malicious domains to the hash table.
-	while ( ( read = getline ( &line, &len, blacklist_file ) ) != -1 ) {
+	while ( ( read = getline ( &line, &line_length, blacklist_file ) ) != -1 ) {
 
 		// Remove the newline character at the end of each line.
 		line[strcspn ( line, "\r\n" )] = 0;
 
 		// Allocate memory for each domain name.
 		char *tempdomain;
-		tempdomain = ( char * ) malloc ( sizeof ( char ) * len );
-		strncpy ( tempdomain, line, len );
+		tempdomain = ( char * ) malloc ( sizeof ( char ) * line_length );
+		strncpy ( tempdomain, line, line_length );
 
 		// Check if the value is already inserted in the hash table.
 		struct domainhash *s;
 		HASH_FIND_STR ( domainhashtable, tempdomain, s );
 		if ( s != NULL ) {
-			ERROR_MSG ( "collision between %s AND %s", line, s->domainname );
+			ERROR_MSG ( "collision between '%s' AND '%s'", line, s->domainname );
 			ERROR_MSG ( "Verify that '%s' does not contain dublicate entries" );
 			return 0;
 		}
