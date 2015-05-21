@@ -47,7 +47,7 @@
 #include "dns_types.h"
 
 /* Initialize the module */
-short eemo_blacklist_initialize ( char *, char* );
+short eemo_blacklist_initialize (int, char *, char* );
 
 /* Uninitialize the module */
 void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings );

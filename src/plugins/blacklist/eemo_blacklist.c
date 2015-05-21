@@ -43,6 +43,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include "uthash.h"
+#include "dns_parser.c"
 
 /* This is a structure that can be hashed,
  * it is used to store blacklisted domains */
@@ -53,13 +54,14 @@ struct domainhash
 };
 
 /* Configuration */
+int 	blacklist_mod    = 0;
 char*	logging_file_name		= NULL;
 FILE*	logging_file			= NULL;
-struct 	domainhash *domainhashtable 	= NULL;    /* important! initialize the HASH TABLE */
+struct 	domainhash *hashtable 	= NULL;    /* important! initialize the HASH TABLE */
 int 	testcount 			= 0;
 
 /* Initialize the module */
-short eemo_blacklist_initialize ( char* blacklist_file_name, char* temp_logging_file_name )
+short eemo_blacklist_initialize (int temp_blacklist_mod, char* blacklist_file_name, char* temp_logging_file_name )
 {
 	// Variables used to read and load blacklist file
 	FILE * blacklist_file 	= NULL;
@@ -68,6 +70,7 @@ short eemo_blacklist_initialize ( char* blacklist_file_name, char* temp_logging_
 	ssize_t read;
 
 	logging_file_name = temp_logging_file_name;
+	blacklist_mod = temp_blacklist_mod;
 
 	// Open the log file.
 	logging_file = fopen ( logging_file_name, "w" );
@@ -102,7 +105,7 @@ short eemo_blacklist_initialize ( char* blacklist_file_name, char* temp_logging_
 
 		// Check if the value is already inserted in the hash table.
 		struct domainhash *s;
-		HASH_FIND_STR ( domainhashtable, tempdomain, s );
+		HASH_FIND_STR ( hashtable, tempdomain, s );
 		if ( s != NULL ) {
 			ERROR_MSG ( "collision between '%s' AND '%s'", line, s->domainname );
 			ERROR_MSG ( "Verify that '%s' does not contain dublicate entries" );
@@ -113,7 +116,7 @@ short eemo_blacklist_initialize ( char* blacklist_file_name, char* temp_logging_
 		struct domainhash *d;
 		d = ( struct domainhash* ) malloc ( sizeof ( struct domainhash ) );
 		d->domainname = tempdomain;
-		HASH_ADD_KEYPTR ( hh, domainhashtable, d->domainname, strlen ( d->domainname ), d );
+		HASH_ADD_KEYPTR ( hh, hashtable, d->domainname, strlen ( d->domainname ), d );
 
 		//
 		sum_loaded_domains++;
@@ -143,8 +146,8 @@ void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings )
 
 	// Free the memory of the hash table.
 	struct domainhash *current, *tmp;
-	HASH_ITER ( hh, domainhashtable, current, tmp ) {
-		HASH_DEL ( domainhashtable, current ); /* delete it (users advances to next) */
+	HASH_ITER ( hh, hashtable, current, tmp ) {
+		HASH_DEL ( hashtable, current ); /* delete it (users advances to next) */
 		free ( current );
 	}
 	free ( logging_file_name );
@@ -155,8 +158,8 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 {
 	eemo_dns_query* query_it = NULL;
 
-	// Check if the packet is a query.
-	if ( !dns_packet->qr_flag )
+	// Check if the packet is a query and if a domain-based blacklist is used.
+	if ( !dns_packet->qr_flag && blacklist_mod == 0)
 	{
 		// Validate the packet
 		if ( !dns_packet->is_valid )
@@ -174,7 +177,7 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 		{
 			// Check if the domain is in the blacklist.
 			struct domainhash *s; // s: output pointer
-			HASH_FIND_STR ( domainhashtable, query_it->qname, s );
+			HASH_FIND_STR ( hashtable, query_it->qname, s );
 			if ( s != NULL )
 			{
 				fprintf ( logging_file, "query for blacklisted domain: %s , from %s\n", query_it->qname, ip_info.ip_src );
@@ -182,6 +185,39 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 			}
 			//fflush(logging_file);
 		}
+	}
+	else
+	{
+		//if ( blacklist_mod == 1 ){
+		/*LL_FOREACH ( dns_packet->questions, query_it )
+		{
+			ERROR_MSG ( "This should be empty" );
+		}
+		/*/
+		//eemo_dns_rr* new_rr;
+		//eemo_dns_rr* rr_it;
+
+		//LL_FOREACH( dns_packet->answers, rr_it){
+		INFO_MSG("Try")
+		if ( dns_packet->answers != NULL)
+			if ( dns_packet->answers->type == 1) {
+				// Check if the IP is blacklisted.
+				struct domainhash *s; // s: output pointer
+				HASH_FIND_STR ( hashtable, eemo_rdata_to_string(dns_packet->answers), s)
+				if ( s != NULL )
+				{
+					fprintf ( logging_file, "query for blacklisted IP: %s, from %s\n", eemo_rdata_to_string(dns_packet->answers), ip_info.ip_src);
+				}
+				else
+				{
+					INFO_MSG ( "We have an safe answer: %s", eemo_rdata_to_string(dns_packet->answers));
+				}
+				
+			}
+		INFO_MSG("DONE")
+		
+		//*/
+		//}
 	}
 	return ERV_HANDLED;
 }

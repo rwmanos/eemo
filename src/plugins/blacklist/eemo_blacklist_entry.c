@@ -52,6 +52,7 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 {
 	eemo_rv rv		= ERV_OK;
 	char*	logging_file	= NULL;
+        int 	blacklist_mod   = 0;
 	char* 	blacklist_file 	= NULL;
 	short 	status		= 1;
 
@@ -59,9 +60,14 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 	eemo_init_plugin_log ( eemo_fn->log );
 
 	/* Retrieve configuration */
-	if ( ( ( eemo_fn->conf_get_string ) ( conf_base_path, "log_file", &logging_file, NULL ) != ERV_OK ) ||
-	        ( logging_file == NULL ) )
+	if ( ( ( eemo_fn->conf_get_string ) ( conf_base_path, "log_file", &logging_file, NULL ) != ERV_OK ) || ( logging_file == NULL ) )
 	{
+		return ERV_CONFIG_ERROR;
+	}
+
+	if ( ( ( eemo_fn->conf_get_int) ( conf_base_path, "blacklist_mod", &blacklist_mod, 0 ) != ERV_OK ))
+	{
+		free ( logging_file );
 		return ERV_CONFIG_ERROR;
 	}
 
@@ -72,7 +78,7 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 	}
 
 	/* Initialise the module */
-	status = eemo_blacklist_initialize ( blacklist_file, logging_file );
+	status = eemo_blacklist_initialize (blacklist_mod, blacklist_file, logging_file );
 	if ( status == 0 )
 		return ERV_CONFIG_ERROR;
 
