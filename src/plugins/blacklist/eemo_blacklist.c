@@ -198,23 +198,25 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 		//eemo_dns_rr* rr_it;
 
 		//LL_FOREACH( dns_packet->answers, rr_it){
-		INFO_MSG("Try")
+		//INFO_MSG("Try");
 		if ( dns_packet->answers != NULL)
 			if ( dns_packet->answers->type == 1) {
 				// Check if the IP is blacklisted.
 				struct domainhash *s; // s: output pointer
-				HASH_FIND_STR ( hashtable, eemo_rdata_to_string(dns_packet->answers), s)
+				HASH_FIND_STR ( hashtable, eemo_rdata_to_string(dns_packet->answers), s);
 				if ( s != NULL )
 				{
 					fprintf ( logging_file, "query for blacklisted IP: %s, from %s\n", eemo_rdata_to_string(dns_packet->answers), ip_info.ip_src);
+					DEBUG_MSG ( "We have an malicious answer: %s", eemo_rdata_to_string(dns_packet->answers));
+					
 				}
 				else
 				{
-					INFO_MSG ( "We have an safe answer: %s", eemo_rdata_to_string(dns_packet->answers));
+					//INFO_MSG ( "We have an safe answer: %s", eemo_rdata_to_string(dns_packet->answers));
 				}
 				
 			}
-		INFO_MSG("DONE")
+		//INFO_MSG("DONE");
 		
 		//*/
 		//}
