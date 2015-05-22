@@ -49,8 +49,8 @@
  * it is used to store blacklisted domains */
 struct domainhash
 {
-	const char *domainname;
-	UT_hash_handle hh;         /* makes this structure hashable */
+    const char *domainname;
+    UT_hash_handle hh;         /* makes this structure hashable */
 };
 
 /* Configuration */
@@ -61,166 +61,167 @@ struct 	domainhash *hashtable 	= NULL;    /* important! initialize the HASH TABL
 int 	testcount 			= 0;
 
 /* Initialize the module */
-short eemo_blacklist_initialize (int temp_blacklist_mod, char* blacklist_file_name, char* temp_logging_file_name )
+short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_name, char* temp_logging_file_name )
 {
-	// Variables used to read and load blacklist file
-	FILE * blacklist_file 	= NULL;
-	char * line 		= NULL;
-	size_t line_length 	= 0;
-	ssize_t read;
+    // Variables used to read and load blacklist file
+    FILE * blacklist_file 	= NULL;
+    char * line 		= NULL;
+    size_t line_length 	= 0;
+    ssize_t read;
 
-	logging_file_name = temp_logging_file_name;
-	blacklist_mod = temp_blacklist_mod;
+    logging_file_name = temp_logging_file_name;
+    blacklist_mod = temp_blacklist_mod;
 
-	// Open the log file.
-	logging_file = fopen ( logging_file_name, "w" );
-	if ( logging_file == NULL )
-	{
-		ERROR_MSG ( "Failed to open '%s' for writing", logging_file_name );
-		return 0;
-	}
-	INFO_MSG ( "Writing infected nodes to: '%s'", logging_file_name );
+    // Open the log file.
+    logging_file = fopen ( logging_file_name, "w" );
+    if ( logging_file == NULL )
+    {
+        ERROR_MSG ( "Failed to open '%s' for writing", logging_file_name );
+        return 0;
+    }
+    INFO_MSG ( "Writing infected nodes to: '%s'", logging_file_name );
 
-	// Open the file that contains the malicious domains.
-	blacklist_file = fopen ( blacklist_file_name, "r" );
-	if ( blacklist_file == NULL )
-	{
-		ERROR_MSG ( "Failed to open '%s' for reading", blacklist_file_name );
-		return 0;
-	}
+    // Open the file that contains the malicious domains.
+    blacklist_file = fopen ( blacklist_file_name, "r" );
+    if ( blacklist_file == NULL )
+    {
+        ERROR_MSG ( "Failed to open '%s' for reading", blacklist_file_name );
+        return 0;
+    }
 
-	// Total number of loaded domains.
-	int sum_loaded_domains = 0;
+    // Total number of loaded domains.
+    int sum_loaded_domains = 0;
 
-	// Read the file and insert the malicious domains to the hash table.
-	while ( ( read = getline ( &line, &line_length, blacklist_file ) ) != -1 ) {
+    // Read the file and insert the malicious domains to the hash table.
+    while ( ( read = getline ( &line, &line_length, blacklist_file ) ) != -1 ) {
 
-		// Remove the newline character at the end of each line.
-		line[strcspn ( line, "\r\n" )] = 0;
+        // Remove the newline character at the end of each line.
+        line[strcspn ( line, "\r\n" )] = 0;
 
-		// Allocate memory for each domain name.
-		char *tempdomain;
-		tempdomain = ( char * ) malloc ( sizeof ( char ) * line_length );
-		strncpy ( tempdomain, line, line_length );
+        // Allocate memory for each domain name.
+        char *tempdomain;
+        tempdomain = ( char * ) malloc ( sizeof ( char ) * line_length );
+        strncpy ( tempdomain, line, line_length );
 
-		// Check if the value is already inserted in the hash table.
-		struct domainhash *s;
-		HASH_FIND_STR ( hashtable, tempdomain, s );
-		if ( s != NULL ) {
-			ERROR_MSG ( "collision between '%s' AND '%s'", line, s->domainname );
-			ERROR_MSG ( "Verify that '%s' does not contain dublicate entries" );
-			return 0;
-		}
+        // Check if the value is already inserted in the hash table.
+        struct domainhash *s;
+        HASH_FIND_STR ( hashtable, tempdomain, s );
+        if ( s != NULL ) {
+            ERROR_MSG ( "collision between '%s' AND '%s'", line, s->domainname );
+            ERROR_MSG ( "Verify that '%s' does not contain dublicate entries" );
+            return 0;
+        }
 
-		// Insert the domain name to the hash table.
-		struct domainhash *d;
-		d = ( struct domainhash* ) malloc ( sizeof ( struct domainhash ) );
-		d->domainname = tempdomain;
-		HASH_ADD_KEYPTR ( hh, hashtable, d->domainname, strlen ( d->domainname ), d );
+        // Insert the domain name to the hash table.
+        struct domainhash *d;
+        d = ( struct domainhash* ) malloc ( sizeof ( struct domainhash ) );
+        d->domainname = tempdomain;
+        HASH_ADD_KEYPTR ( hh, hashtable, d->domainname, strlen ( d->domainname ), d );
 
-		//
-		sum_loaded_domains++;
-	}
+        //
+        sum_loaded_domains++;
+    }
 
-	// Verify that the file is still open and close it.
-	if ( blacklist_file == NULL ) {
-		ERROR_MSG ( "File '%s' has closed unexpectedly", blacklist_file_name );
-		return 0;
-	}
-	fclose ( blacklist_file );
-	INFO_MSG ( "%d blacklisted domains were loaded successfully", sum_loaded_domains );
-	return 1;
+    // Verify that the file is still open and close it.
+    if ( blacklist_file == NULL ) {
+        ERROR_MSG ( "File '%s' has closed unexpectedly", blacklist_file_name );
+        return 0;
+    }
+    fclose ( blacklist_file );
+    INFO_MSG ( "%d blacklisted domains were loaded successfully", sum_loaded_domains );
+    return 1;
 }
 
 /* Uninitialize the DNS query counter module */
 void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings )
 {
-	fprintf ( logging_file, "Total inspected packets: %d\n", testcount );
+    fprintf ( logging_file, "Total inspected packets: %d\n", testcount );
 
-	// Verify that the file is still open and close it.
-	if ( logging_file == NULL )
-	{
-		ERROR_MSG ( "File '%s' has closed unexpectedly", logging_file_name );
-	}
-	fclose ( logging_file );
+    // Verify that the file is still open and close it.
+    if ( logging_file == NULL )
+    {
+        ERROR_MSG ( "File '%s' has closed unexpectedly", logging_file_name );
+    }
+    fclose ( logging_file );
 
-	// Free the memory of the hash table.
-	struct domainhash *current, *tmp;
-	HASH_ITER ( hh, hashtable, current, tmp ) {
-		HASH_DEL ( hashtable, current ); /* delete it (users advances to next) */
-		free ( current );
-	}
-	free ( logging_file_name );
+    // Free the memory of the hash table.
+    struct domainhash *current, *tmp;
+    HASH_ITER ( hh, hashtable, current, tmp ) {
+        HASH_DEL ( hashtable, current ); /* delete it (users advances to next) */
+        free ( current );
+    }
+    free ( logging_file_name );
 }
 
 /* Handle DNS query packets and log the blacklisted domain*/
 eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet )
 {
-	eemo_dns_query* query_it = NULL;
+    testcount++;
 
-	// Check if the packet is a query and if a domain-based blacklist is used.
-	if ( !dns_packet->qr_flag && blacklist_mod == 0)
-	{
-		// Validate the packet
-		if ( !dns_packet->is_valid )
-		{
-			return ERV_SKIPPED;
-		}
-		testcount++;
+    // Check if the packet is a query and if a domain-based blacklist is used.
+    if ( !dns_packet->qr_flag )
+    {
+        if ( blacklist_mod == 0 )
+        {
+            // Validate the packet
+            if ( !dns_packet->is_valid )
+            {
+                return ERV_SKIPPED;
+            }
 
-		if ( logging_file == NULL )
-			ERROR_MSG ( "File '%s' has closed unexpectedly", logging_file_name );
-		// This should return an error.
+            if ( logging_file == NULL )
+                ERROR_MSG ( "File '%s' has closed unexpectedly", logging_file_name );
+            // This should return an error.
 
-		// Iterate for every requested domain in the query.
-		LL_FOREACH ( dns_packet->questions, query_it )
-		{
-			// Check if the domain is in the blacklist.
-			struct domainhash *s; // s: output pointer
-			HASH_FIND_STR ( hashtable, query_it->qname, s );
-			if ( s != NULL )
-			{
-				fprintf ( logging_file, "query for blacklisted domain: %s , from %s\n", query_it->qname, ip_info.ip_src );
-				break;
-			}
-			//fflush(logging_file);
-		}
-	}
-	else
-	{
-		//if ( blacklist_mod == 1 ){
-		/*LL_FOREACH ( dns_packet->questions, query_it )
-		{
-			ERROR_MSG ( "This should be empty" );
-		}
-		/*/
-		//eemo_dns_rr* new_rr;
-		//eemo_dns_rr* rr_it;
+            // Iterate for every requested domain in the query.
+            eemo_dns_query* query_it = NULL;
+            LL_FOREACH ( dns_packet->questions, query_it )
+            {
+                // Check if the domain is in the blacklist.
+                struct domainhash *s; // s: output pointer
+                HASH_FIND_STR ( hashtable, query_it->qname, s );
+                if ( s != NULL )
+                {
+                    fprintf ( logging_file, "query for blacklisted domain: %s , from %s\n", query_it->qname, ip_info.ip_src );
+                    break;
+                }
+                //fflush(logging_file);
+            }
+        }
+    }
+    else
+    {
+        // Validate the packet
+        if ( !dns_packet->is_valid )
+        {
+            return ERV_SKIPPED;
+        }
+        //if ( blacklist_mod == 1 ){
+        /*LL_FOREACH ( dns_packet->questions, query_it )
+        {
+        	ERROR_MSG ( "This should be empty" );
+        }
+        /*/
+        if ( dns_packet->answers != NULL )
+        {
+            eemo_dns_rr* temp_rr;
+            LL_FOREACH ( dns_packet->answers, temp_rr )
+            {
+                if ( temp_rr->type == DNS_QTYPE_A ) {
+                    struct domainhash *s; // s: output pointer
+                    HASH_FIND_STR ( hashtable, eemo_rdata_to_string ( temp_rr ), s );
+                    if ( s != NULL )
+                    {
+                        fprintf ( logging_file, "query for blacklisted IP: %s, from %s\n", eemo_rdata_to_string ( temp_rr ), ip_info.ip_src );
+                        DEBUG_MSG ( "Malicious answer: %s", eemo_rdata_to_string ( temp_rr ) );
 
-		//LL_FOREACH( dns_packet->answers, rr_it){
-		//INFO_MSG("Try");
-		if ( dns_packet->answers != NULL)
-			if ( dns_packet->answers->type == 1) {
-				// Check if the IP is blacklisted.
-				struct domainhash *s; // s: output pointer
-				HASH_FIND_STR ( hashtable, eemo_rdata_to_string(dns_packet->answers), s);
-				if ( s != NULL )
-				{
-					fprintf ( logging_file, "query for blacklisted IP: %s, from %s\n", eemo_rdata_to_string(dns_packet->answers), ip_info.ip_src);
-					DEBUG_MSG ( "We have an malicious answer: %s", eemo_rdata_to_string(dns_packet->answers));
-					
-				}
-				else
-				{
-					//INFO_MSG ( "We have an safe answer: %s", eemo_rdata_to_string(dns_packet->answers));
-				}
-				
-			}
-		//INFO_MSG("DONE");
-		
-		//*/
-		//}
-	}
-	return ERV_HANDLED;
+                    }
+                }
+
+            }
+        }
+        //*/
+    }
+    return ERV_HANDLED;
 }
 
