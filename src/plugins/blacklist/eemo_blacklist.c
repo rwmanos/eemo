@@ -46,10 +46,10 @@
 #include "dns_parser.c"
 
 /* This is a structure that can be hashed,
- * it is used to store blacklisted domains */
-struct domainhash
+ * it is used to store blacklisted elements */
+struct hashstructure
 {
-	const char *domainname;
+	const char *hashelement;
 	UT_hash_handle hh;         /* makes this structure hashable */
 };
 
@@ -57,7 +57,7 @@ struct domainhash
 int 	blacklist_mod    = 0;
 char*	logging_file_name		= NULL;
 FILE*	logging_file			= NULL;
-struct 	domainhash *hashtable 	= NULL;    /* important! initialize the HASH TABLE */
+struct 	hashstructure *hashtable 	= NULL;    /* important! initialize the HASH TABLE */
 int 	testcount 			= 0;
 
 char* qtypeA_to_string ( eemo_dns_rr* rr )
@@ -96,7 +96,7 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 	}
 	INFO_MSG ( "Writing infected nodes to: '%s'", logging_file_name );
 
-	// Open the file that contains the malicious domains.
+	// Open the file that contains the malicious elements.
 	blacklist_file = fopen ( blacklist_file_name, "r" );
 	if ( blacklist_file == NULL )
 	{
@@ -104,39 +104,39 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 		return 0;
 	}
 
-	// Total number of loaded domains.
-	int sum_loaded_domains = 0;
+	// Total number of loaded elements.
+	int sum_loaded_elements = 0;
 
-	// Read the file and insert the malicious domains to the hash table.
+	// Read the file and insert the malicious elements to the hash table.
 	while ( ( read = getline ( &line, &line_length, blacklist_file ) ) != -1 )
 	{
 
 		// Remove the newline character at the end of each line.
 		line[strcspn ( line, "\r\n" )] = 0;
 
-		// Allocate memory for each domain name.
-		char *tempdomain;
-		tempdomain = ( char * ) malloc ( sizeof ( char ) * line_length );
-		strncpy ( tempdomain, line, line_length );
+		// Allocate memory for each element.
+		char *tempelement;
+		tempelement = ( char * ) malloc ( sizeof ( char ) * line_length );
+		strncpy ( tempelement, line, line_length );
 
 		// Check if the value is already inserted in the hash table.
-		struct domainhash *s;
-		HASH_FIND_STR ( hashtable, tempdomain, s );
+		struct hashstructure *s;
+		HASH_FIND_STR ( hashtable, tempelement, s );
 		if ( s != NULL )
 		{
-			ERROR_MSG ( "collision between '%s' AND '%s'", line, s->domainname );
+			ERROR_MSG ( "collision between '%s' AND '%s'", line, s->hashelement );
 			ERROR_MSG ( "Verify that '%s' does not contain dublicate entries" );
 			return 0;
 		}
 
-		// Insert the domain name to the hash table.
-		struct domainhash *d;
-		d = ( struct domainhash* ) malloc ( sizeof ( struct domainhash ) );
-		d->domainname = tempdomain;
-		HASH_ADD_KEYPTR ( hh, hashtable, d->domainname, strlen ( d->domainname ), d );
+		// Insert the element name to the hash table.
+		struct hashstructure *d;
+		d = ( struct hashstructure* ) malloc ( sizeof ( struct hashstructure ) );
+		d->hashelement = tempelement;
+		HASH_ADD_KEYPTR ( hh, hashtable, d->hashelement, strlen ( d->hashelement ), d );
 
 		//
-		sum_loaded_domains++;
+		sum_loaded_elements++;
 	}
 
 	// Verify that the file is still open and close it.
@@ -146,7 +146,7 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 		return 0;
 	}
 	fclose ( blacklist_file );
-	INFO_MSG ( "%d blacklisted domains were loaded successfully", sum_loaded_domains );
+	INFO_MSG ( "%d blacklisted elements were loaded successfully", sum_loaded_elements );
 	return 1;
 }
 
@@ -163,7 +163,7 @@ void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings )
 	fclose ( logging_file );
 
 	// Free the memory of the hash table.
-	struct domainhash *current, *tmp;
+	struct hashstructure *current, *tmp;
 	HASH_ITER ( hh, hashtable, current, tmp )
 	{
 		HASH_DEL ( hashtable, current ); /* delete it (users advances to next) */
@@ -172,7 +172,7 @@ void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings )
 	free ( logging_file_name );
 }
 
-/* Handle DNS query packets and log the blacklisted domain*/
+/* Handle DNS query packets and log the blacklisted elements*/
 eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet )
 {
 	testcount++;
@@ -199,7 +199,7 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 			LL_FOREACH ( dns_packet->questions, query_it )
 			{
 				// Check if the domain is in the blacklist.
-				struct domainhash *s; // s: output pointer
+				struct hashstructure *s; // s: output pointer
 				HASH_FIND_STR ( hashtable, query_it->qname, s );
 				if ( s != NULL )
 				{
@@ -227,7 +227,7 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 				{
 					if ( temp_rr->type == DNS_QTYPE_A )
 					{
-						struct domainhash *s; // s: output pointer
+						struct hashstructure *s; // s: output pointer
 						char* temp_answer = NULL;
 						temp_answer = qtypeA_to_string ( temp_rr );
 						if ( temp_answer == NULL )
