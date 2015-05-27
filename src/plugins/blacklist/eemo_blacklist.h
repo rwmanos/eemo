@@ -52,7 +52,7 @@ short eemo_blacklist_initialize ( int, char *, char* );
 /* Uninitialize the module */
 void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings );
 
-/* Handle DNS query packets and check if blacklisted domains was requested */
+/* Handle DNS query packets and check if a blacklisted element was requested */
 eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const eemo_dns_packet* dns_packet );
 
 #endif

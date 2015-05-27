@@ -134,7 +134,7 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 		}
 		else
 		{
-			// Insert the element name to the hash table.
+			// Insert the blacklisted element to the hash table.
 			struct hashstructure *d;
 			d = ( struct hashstructure* ) malloc ( sizeof ( struct hashstructure ) );
 			d->hashelement = tempelement;
@@ -234,6 +234,7 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 
 			if ( dns_packet->answers != NULL )
 			{
+				// Iterate for every RR in the DNS answer.
 				eemo_dns_rr* temp_rr;
 				LL_FOREACH ( dns_packet->answers, temp_rr )
 				{
@@ -248,6 +249,7 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 						}
 						else
 						{
+							// Check if the IP is in the blacklist.
 							HASH_FIND_STR ( hashtable, temp_answer, s );
 							if ( s != NULL )
 							{
