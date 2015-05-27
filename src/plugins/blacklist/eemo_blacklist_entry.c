@@ -52,7 +52,7 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 {
 	eemo_rv rv		= ERV_OK;
 	char*	logging_file	= NULL;
-        int 	blacklist_mod   = 0;
+	int 	blacklist_mod   = 0;
 	char* 	blacklist_file 	= NULL;
 	short 	status		= 1;
 
@@ -65,7 +65,7 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 		return ERV_CONFIG_ERROR;
 	}
 
-	if ( ( ( eemo_fn->conf_get_int) ( conf_base_path, "blacklist_mod", &blacklist_mod, 0 ) != ERV_OK ))
+	if ( ( ( eemo_fn->conf_get_int ) ( conf_base_path, "blacklist_mod", &blacklist_mod, 0 ) != ERV_OK ) )
 	{
 		free ( logging_file );
 		return ERV_CONFIG_ERROR;
@@ -78,14 +78,18 @@ eemo_rv eemo_blacklist_init ( eemo_export_fn_table_ptr eemo_fn, const char* conf
 	}
 
 	/* Initialise the module */
-	status = eemo_blacklist_initialize (blacklist_mod, blacklist_file, logging_file );
+	status = eemo_blacklist_initialize ( blacklist_mod, blacklist_file, logging_file );
 	if ( status == 0 )
+	{
 		return ERV_CONFIG_ERROR;
+	}
 
 	/* Register DNS query handler */
 	rv = ( eemo_fn->reg_dns_handler ) ( &eemo_blacklist_handleqr, PARSE_QUERY | PARSE_RESPONSE, &dns_handler_handle );
 	if ( rv != ERV_OK )
+	{
 		ERROR_MSG ( "Failed to register DNS query handler" );
+	}
 	return rv;
 }
 
