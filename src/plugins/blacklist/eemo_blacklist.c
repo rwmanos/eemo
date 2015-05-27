@@ -54,26 +54,21 @@ struct hashstructure
 };
 
 /* Configuration */
-int 	blacklist_mod    = 0;
+int	blacklist_mod    = 0;
 char*	logging_file_name		= NULL;
 FILE*	logging_file			= NULL;
-struct 	hashstructure *hashtable 	= NULL;    /* important! initialize the HASH TABLE */
-int 	testcount 			= 0;
+struct	hashstructure *hashtable 	= NULL;    /* important! initialize the HASH TABLE */
+int	testcount 			= 0;
+char*	temp_answer			= NULL;
 
 /* Convert the rdata of a DNS answer that contains an IP address to string. */
-char* qtypeA_to_string ( eemo_dns_rr* rr )
+void qtypeA_to_string ( eemo_dns_rr* rr, char* rv )
 {
-	char* rv = NULL;
-	rv = ( char* ) malloc ( 16 * sizeof ( char ) ); /* 4x 3 digits + 3x '.' + \0 */
-	if ( rv != NULL )
-	{
-		snprintf ( rv, 16, "%d.%d.%d.%d",
-		           ( * ( ( unsigned int* ) rr->rdata ) & 0xff000000 ) >> 24,
-		           ( * ( ( unsigned int* ) rr->rdata ) & 0x00ff0000 ) >> 16,
-		           ( * ( ( unsigned int* ) rr->rdata ) & 0x0000ff00 ) >> 8,
-		           ( * ( ( unsigned int* ) rr->rdata ) & 0x000000ff ) );
-	}
-	return rv;
+	snprintf ( rv, 16, "%d.%d.%d.%d",
+	           ( * ( ( unsigned int* ) rr->rdata ) & 0xff000000 ) >> 24,
+	           ( * ( ( unsigned int* ) rr->rdata ) & 0x00ff0000 ) >> 16,
+	           ( * ( ( unsigned int* ) rr->rdata ) & 0x0000ff00 ) >> 8,
+	           ( * ( ( unsigned int* ) rr->rdata ) & 0x000000ff ) );
 }
 
 /* Initialize the module */
@@ -87,6 +82,13 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 
 	logging_file_name = temp_logging_file_name;
 	blacklist_mod = temp_blacklist_mod;
+
+	/* If an IP-based blacklist is used, a variable to temporarily store
+	 * the IP address of every DNS answer in needed. */
+	if ( blacklist_mod == 1 )
+	{
+		temp_answer = ( char* ) malloc ( 16 * sizeof ( char ) ); /* 4x 3 digits + 3x '.' + \0 */
+	}
 
 	// Open the log file.
 	logging_file = fopen ( logging_file_name, "w" );
@@ -126,9 +128,9 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 		{
 			ERROR_MSG ( "collision between '%s' AND '%s'", line, s->hashelement );
 			ERROR_MSG ( "Verify that '%s' does not contain dublicate entries", blacklist_file_name );
-			/* blacklists regularly do not contain duplicate entries and the file might 
+			/* blacklists regularly do not contain duplicate entries and the file might
 			 * be corrupted. However, the termination can be safely removed. */
-			return 0; 
+			return 0;
 		}
 		else
 		{
@@ -173,6 +175,7 @@ void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings )
 		free ( current );
 	}
 	free ( logging_file_name );
+	free ( temp_answer );
 }
 
 /* Handle DNS query packets and log the blacklisted elements*/
@@ -215,14 +218,20 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 	}
 	else
 	{
-		// Validate the packet
-		if ( !dns_packet->is_valid )
-		{
-			return ERV_SKIPPED;
-		}
 		// Verify that an IP-based blacklist is used.
 		if ( blacklist_mod == 1 )
 		{
+			// Validate the packet
+			if ( !dns_packet->is_valid )
+			{
+				return ERV_SKIPPED;
+			}
+
+			if ( logging_file == NULL )
+			{
+				ERROR_MSG ( "File '%s' has closed unexpectedly", logging_file_name );
+			}
+
 			if ( dns_packet->answers != NULL )
 			{
 				eemo_dns_rr* temp_rr;
@@ -231,9 +240,9 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 					if ( temp_rr->type == DNS_QTYPE_A )
 					{
 						struct hashstructure *s; // s: output pointer
-						char* temp_answer = NULL;
-						temp_answer = qtypeA_to_string ( temp_rr );
-						if ( temp_answer == NULL )
+						temp_answer[0] = '\0';
+						qtypeA_to_string ( temp_rr, temp_answer );
+						if ( temp_answer[0] == '\0' )
 						{
 							DEBUG_MSG ( "Answer is empty" );
 						}
@@ -246,7 +255,6 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 								DEBUG_MSG ( "Malicious answer: \"%s\"", temp_answer );
 							}
 						}
-						free ( temp_answer );
 					}
 				}
 				//fflush(logging_file);
