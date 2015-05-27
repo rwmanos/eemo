@@ -60,6 +60,7 @@ FILE*	logging_file			= NULL;
 struct 	hashstructure *hashtable 	= NULL;    /* important! initialize the HASH TABLE */
 int 	testcount 			= 0;
 
+/* Convert the rdata of a DNS answer that contains an IP address to string. */
 char* qtypeA_to_string ( eemo_dns_rr* rr )
 {
 	char* rv = NULL;
@@ -78,7 +79,7 @@ char* qtypeA_to_string ( eemo_dns_rr* rr )
 /* Initialize the module */
 short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_name, char* temp_logging_file_name )
 {
-	// Variables used to read and load blacklist file
+	// Variables used to read and load the blacklist file.
 	FILE * blacklist_file 	= NULL;
 	char * line 		= NULL;
 	size_t line_length 	= 0;
@@ -104,13 +105,12 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 		return 0;
 	}
 
-	// Total number of loaded elements.
+	// Total number of loaded blacklisted elements.
 	int sum_loaded_elements = 0;
 
 	// Read the file and insert the malicious elements to the hash table.
 	while ( ( read = getline ( &line, &line_length, blacklist_file ) ) != -1 )
 	{
-
 		// Remove the newline character at the end of each line.
 		line[strcspn ( line, "\r\n" )] = 0;
 
@@ -125,18 +125,21 @@ short eemo_blacklist_initialize ( int temp_blacklist_mod, char* blacklist_file_n
 		if ( s != NULL )
 		{
 			ERROR_MSG ( "collision between '%s' AND '%s'", line, s->hashelement );
-			ERROR_MSG ( "Verify that '%s' does not contain dublicate entries" );
-			return 0;
+			ERROR_MSG ( "Verify that '%s' does not contain dublicate entries", blacklist_file_name );
+			/* blacklists regularly do not contain duplicate entries and the file might 
+			 * be corrupted. However, the termination can be safely removed. */
+			return 0; 
 		}
+		else
+		{
+			// Insert the element name to the hash table.
+			struct hashstructure *d;
+			d = ( struct hashstructure* ) malloc ( sizeof ( struct hashstructure ) );
+			d->hashelement = tempelement;
+			HASH_ADD_KEYPTR ( hh, hashtable, d->hashelement, strlen ( d->hashelement ), d );
 
-		// Insert the element name to the hash table.
-		struct hashstructure *d;
-		d = ( struct hashstructure* ) malloc ( sizeof ( struct hashstructure ) );
-		d->hashelement = tempelement;
-		HASH_ADD_KEYPTR ( hh, hashtable, d->hashelement, strlen ( d->hashelement ), d );
-
-		//
-		sum_loaded_elements++;
+			sum_loaded_elements++;
+		}
 	}
 
 	// Verify that the file is still open and close it.
@@ -243,6 +246,7 @@ eemo_rv eemo_blacklist_handleqr ( eemo_ip_packet_info ip_info, int is_tcp, const
 								DEBUG_MSG ( "Malicious answer: \"%s\"", temp_answer );
 							}
 						}
+						free ( temp_answer );
 					}
 				}
 				//fflush(logging_file);
