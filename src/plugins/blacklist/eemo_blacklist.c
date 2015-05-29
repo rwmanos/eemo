@@ -49,7 +49,7 @@
  * it is used to store blacklisted elements */
 struct hashstructure
 {
-	const char *hashelement;
+	char *hashelement;
 	UT_hash_handle hh;         /* makes this structure hashable */
 };
 
@@ -172,6 +172,7 @@ void eemo_blacklist_uninitialize ( eemo_conf_free_string_array_fn free_strings )
 	HASH_ITER ( hh, hashtable, current, tmp )
 	{
 		HASH_DEL ( hashtable, current ); /* delete it (users advances to next) */
+		free ( current->hashelement );
 		free ( current );
 	}
 	free ( logging_file_name );
