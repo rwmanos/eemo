@@ -103,7 +103,11 @@ eemo_rv eemo_handle_udp_packet(eemo_packet_buf* packet, eemo_ip_packet_info ip_i
 			eemo_pbuf_free(udp_data);
 		}
 
-		if (rv != ERV_HANDLED)
+		if (handler_rv == ERV_HANDLED)
+		{
+			return handler_rv;
+		}
+		else
 		{
 			rv = handler_rv;
 		}
